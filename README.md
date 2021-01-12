@@ -1,5 +1,11 @@
 # PostgreSQL repmgr + pgbouncer Vagrant
-## Tutorial
+
+* Vagrant (Ubuntu 18.04.5 LTS Bionic)
+* PostgreSQL
+* repmgr
+* pgBouncer
+
+## Usage
 ```sh
 vagrant up
 ```
@@ -18,6 +24,6 @@ temp_db=> SELECT CURRENT_USER usr, inet_server_addr() host, inet_server_port() p
  temp_user | 127.0.2.1 | 5432
  ```
 
- ## Links
- [https://blog.raveland.org/post/postgresql_repmgr_pgbouncer_en](https://blog.raveland.org/post/postgresql_repmgr_pgbouncer_en/)
- [https://repmgr.org/docs/repmgr.html](https://repmgr.org/docs/repmgr.html)
+## Links
+* [https://blog.raveland.org/post/postgresql_repmgr_pgbouncer_en](https://blog.raveland.org/post/postgresql_repmgr_pgbouncer_en/)
+* [https://repmgr.org/docs/repmgr.html](https://repmgr.org/docs/repmgr.html)
