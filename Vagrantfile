@@ -34,7 +34,7 @@ Vagrant.configure("2") do |config|
                         :node_id => 3,
                         :role => "witness" }
           }
-          # to enable ansible playbook verbose mode, uncomment the line below
+          # to disable ansible playbook verbose mode, comment the line below
           ansible.verbose = "v"
           ansible.extra_vars = { ansible_python_interpreter:"/usr/bin/python3" }
         end
