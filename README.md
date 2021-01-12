@@ -1,5 +1,4 @@
-# PostgreSQL repmgr + pgbouncer Vagrant
-
+# PostgreSQL cluster with repmgr and pgbouncer 
 * Vagrant (Ubuntu 18.04.5 LTS Bionic)
 * PostgreSQL
 * repmgr
