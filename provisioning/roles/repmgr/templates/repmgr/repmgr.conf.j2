@@ -1,0 +1,33 @@
+node_id = {{ node_id }}
+node_name = 'node{{ node_id }}'
+conninfo = 'host={{ connection_host }} user=repmgr dbname=repmgr connect_timeout=2'
+data_directory = '/var/lib/postgresql/{{ postgresql_version }}/main'
+
+use_replication_slots = yes
+
+reconnect_attempts = 5
+reconnect_interval = 1
+
+failover = automatic
+
+standby_disconnect_on_failover = true
+
+pg_bindir = '/usr/lib/postgresql/{{ postgresql_version }}/bin'
+promote_command = '/usr/bin/repmgr standby promote -f /etc/repmgr.conf --log-to-file'
+follow_command = '/usr/bin/repmgr standby follow -f /etc/repmgr.conf --log-to-file --upstream-node-id=%n'
+
+service_start_command = 'sudo /bin/systemctl start postgresql.service'
+service_stop_command = 'sudo /bin/systemctl stop postgresql.service'
+service_restart_command = 'sudo /bin/systemctl restart postgresql.service'
+service_reload_command = 'sudo /bin/systemctl reload postgresql.service'
+#service_promote_command = ''
+
+monitoring_history = yes
+monitor_interval_secs = 2
+#log_status_interval = 5
+promote_check_timeout = 15
+#promote_check_interval = 1
+#master_response_timeout = 5
+
+log_level = INFO
+log_file = '/var/log/postgresql/repmgrd.log'

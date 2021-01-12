@@ -1,0 +1,17 @@
+- name: Configure postgresql
+  include_tasks: patch-pg.yaml
+
+- name: Setup ssh
+  include_tasks: ssh.yaml
+
+- name: Setup repmgr
+  include_tasks: repmgr.yaml
+  tags: [repmgr]
+
+- name: Cluster registration
+  include_tasks: registration.yaml
+  tags: [registration]
+
+- name: Setup pgbouncer
+  include_tasks: pgbouncer.yaml
+  tags: [pgbouncer]

@@ -1,0 +1,5 @@
+max_connections: 100
+db_user: temp_user
+db_password: temp_password
+db_name: temp_db
+postgres_primary: node1

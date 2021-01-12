@@ -1,0 +1,6 @@
+postgresql_version: "10"
+
+repmgr_cluster_group:
+  - node1
+  - node2
+  - node3

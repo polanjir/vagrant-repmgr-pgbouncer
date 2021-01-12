@@ -1,0 +1,47 @@
+- name: Create postgres SSH directory
+  file:
+    mode: 0755
+    owner: postgres
+    group: postgres
+    path: /var/lib/postgresql/.ssh/
+    state: directory
+
+- name: Copy SSH private key
+  copy:
+    src: "keys/id_rsa"
+    dest: /var/lib/postgresql/.ssh/id_rsa
+    owner: postgres
+    group: postgres
+    mode: 0600
+
+- name: Copy SSH public key
+  copy:
+    src: "keys/id_rsa.pub"
+    dest: /var/lib/postgresql/.ssh/id_rsa.pub
+    owner: postgres
+    group: postgres
+    mode: 0644
+
+- name: Add key to authorized keys file
+  authorized_key:
+    user: postgres
+    state: present
+    key: "{{ lookup('file', 'keys/id_rsa.pub') }}"
+
+- name: collect ssh fingerprints
+  shell: >
+    ssh-keyscan -t ecdsa
+    {% for host in repmgr_cluster_group %}
+    {{ hostvars[host].connection_host }}
+    {% endfor %}
+  register: __ssh_fingerprints
+
+- name: ssh known_hosts
+  lineinfile:
+    dest: ~postgres/.ssh/known_hosts
+    create: yes
+    owner: postgres
+    group: postgres
+    mode: 0600
+    line: "{{ item }}"
+  with_items: "{{ __ssh_fingerprints.stdout_lines }}"

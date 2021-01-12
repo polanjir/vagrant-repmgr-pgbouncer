@@ -1,0 +1,20 @@
+- name: Add postgres apt key
+  apt_key:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    state: present
+
+- name: Add postgres repo
+  apt_repository:
+    repo: "deb http://apt.postgresql.org/pub/repos/apt/ {{ ansible_distribution_release }}-pgdg main"
+    state: present
+    filename: pgdg
+    update_cache: yes
+
+- name: Install postgres
+  apt:
+    name:
+      - postgresql-{{ postgresql_version }}
+      - postgresql-{{ postgresql_version }}-ip4r
+      - postgresql-{{ postgresql_version }}-postgis-2.4
+      - postgresql-{{ postgresql_version }}-postgis-2.4-scripts
+    # install_recommends: no

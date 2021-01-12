@@ -1,0 +1,42 @@
+- name: Register primary node
+  become_user: postgres
+  shell: repmgr primary register
+  ignore_errors: yes
+  when: role == "primary"
+
+- name: Stop PostgreSQL
+  systemd:
+    name: postgresql
+    state: stopped
+  when: role == "standby"
+
+- name: Clean up PostgreSQL data directory
+  become_user: postgres
+  file:
+    path: /var/lib/postgresql/{{ postgresql_version }}/main
+    force: yes
+    state: absent
+  when: role == "standby"
+
+- name: Clone primary node data
+  become_user: postgres
+  shell: repmgr -h {{ hostvars[postgres_primary].connection_host }} -U repmgr -d repmgr standby clone
+  ignore_errors: yes
+  when: role == "standby"
+
+- name: Start PostgreSQL
+  systemd:
+    name: postgresql
+    state: started
+  when: role == "standby"
+
+- name: Register {{ role }} node
+  become_user: postgres
+  shell: repmgr -h {{ hostvars[postgres_primary].connection_host }} {{ role }} register -F
+  ignore_errors: yes
+  when: role != "primary"
+
+- name: Start repmgrd
+  become_user: postgres
+  shell: repmgrd
+  ignore_errors: yes

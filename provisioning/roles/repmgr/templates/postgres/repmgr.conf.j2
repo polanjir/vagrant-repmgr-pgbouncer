@@ -1,0 +1,10 @@
+listen_addresses = '*'
+shared_preload_libraries = 'repmgr'
+
+# repmgr
+wal_level = replica
+max_wal_senders = 15
+max_replication_slots = 15
+wal_keep_segments = 500
+hot_standby = on
+wal_log_hints = on

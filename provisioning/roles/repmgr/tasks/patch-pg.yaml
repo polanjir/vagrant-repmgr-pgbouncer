@@ -1,0 +1,38 @@
+- name: Update the /etc/hosts file with node name
+  lineinfile:
+    path: "/etc/hosts"
+    regexp: ".*{{ hostvars[item].connection_host }}\t{{ item }}"
+    line: "{{ hostvars[item].connection_host }}\t{{ item }}"
+    state: present
+    backup: yes
+  with_items: "{{repmgr_cluster_group}}"
+  
+- name: Configure postgresql.conf
+  lineinfile:
+    path: /etc/postgresql/{{ postgresql_version }}/main/postgresql.conf
+    regexp: '^#?listen_addresses '
+    line: "listen_addresses = '*'"
+
+- name: Copy repmgr configuration
+  template:
+    src: postgres/repmgr.conf.j2
+    dest: /etc/postgresql/{{ postgresql_version }}/main/conf.d/repmgr.conf
+    group: postgres
+    mode: '0644'
+    owner: postgres
+
+- name: Copy user access configuration
+  template:
+    src: postgres/pg_hba.conf.j2
+    dest: /etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf
+    group: postgres
+    mode: '0640'
+    owner: postgres
+
+- name: Copy sudoer
+  copy:
+    dest: /etc/sudoers.d/postgres
+    mode: 0440
+    validate: '/usr/sbin/visudo -cf %s'
+    content: |
+      postgres ALL = NOPASSWD: /bin/systemctl * postgresql.service, /usr/bin/pg_ctlcluster

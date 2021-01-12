@@ -1,0 +1,27 @@
+---
+
+- name: start repmgrd
+  service:
+    name: repmgrd
+    state: started
+
+- name: stop repmgrd
+  service:
+    name: repmgrd
+    state: stop
+
+- name: restart repmgrd
+  service:
+    name: repmgrd
+    state: restarted
+
+- name: reload repmgrd
+  service:
+    name: repmgrd
+    state: reloaded
+
+- name: restart pgbouncer
+  service:
+    name: pgbouncer
+    state: restarted
+    enabled: yes

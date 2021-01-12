@@ -1,0 +1,70 @@
+- name: Install PgBouncer
+  apt:
+    name: pgbouncer
+
+- name: Create directory
+  file:
+    path: /etc/pgbouncer
+    state: directory
+    group: postgres
+    owner: postgres
+
+- name: Config pgbouncer
+  template:
+    src: pgbouncer/pgbouncer.ini.j2
+    dest: /etc/pgbouncer/pgbouncer.ini
+    group: postgres
+    mode: '0644'
+    owner: postgres
+    backup: yes
+  notify:
+    - restart pgbouncer
+
+- name: Copy pgbouncer.database.ini file
+  template:
+    src: pgbouncer/pgbouncer.database.ini.j2
+    dest: /etc/pgbouncer/pgbouncer.database.ini
+    group: postgres
+    mode: '0644'
+    owner: postgres
+
+- name: Create userlist.txt file
+  template:
+    src: pgbouncer/userlist.txt.j2
+    dest: /etc/pgbouncer/userlist.txt
+    group: postgres
+    mode: '0644'
+    owner: postgres
+
+- name: Setup testuser and database
+  become_user: postgres
+  ignore_errors: yes
+  shell: |
+    psql -c "create role {{db_user}} with login password '{{db_password}}';" &&
+    createdb {{db_name}} --owner={{db_user}}
+    exit 0
+  when:  hostvars[inventory_hostname].role == "primary"
+
+- name: Systemd pgbouncer override number open file limit
+  template:
+    src: pgbouncer/pgbouncer.service
+    dest: /etc/systemd/system/pgbouncer.service
+
+- name: pgbouncer daemon-reload
+  systemd:
+    name: pgbouncer
+    daemon_reload: yes
+
+- name: Copy pgbouncer.database.ini file
+  template:
+    src: pgbouncer/promote.sh.j2
+    dest: /usr/local/bin/promote.sh
+    group: postgres
+    mode: '0755'
+    owner: postgres
+
+- name: Replace configuration that needed
+  replace:
+    path: /etc/repmgr.conf
+    regexp: "^#(service_promote_command).*"
+    replace: "\\1 = '/usr/local/bin/promote.sh'"
