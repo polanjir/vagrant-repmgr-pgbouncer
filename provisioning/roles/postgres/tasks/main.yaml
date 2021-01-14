@@ -15,6 +15,5 @@
     name:
       - postgresql-{{ postgresql_version }}
       - postgresql-{{ postgresql_version }}-ip4r
-      - postgresql-{{ postgresql_version }}-postgis-2.4
-      - postgresql-{{ postgresql_version }}-postgis-2.4-scripts
-    # install_recommends: no
+      - postgresql-{{ postgresql_version }}-postgis-{{ postgis_version }}
+      - postgresql-{{ postgresql_version }}-postgis-{{ postgis_version }}-scripts

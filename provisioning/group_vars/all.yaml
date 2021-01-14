@@ -1,4 +1,11 @@
-postgresql_version: "10"
+ansible_python_interpreter: /usr/bin/python3
+
+postgresql_version: 10
+postgis_version: 2.4
+postgresql_datadir: '/var/lib/postgresql/{{ postgresql_version }}/main'
+postgresql_bindir: '/usr/lib/postgresql/{{ postgresql_version }}/bin'
+
+auth_type: md5
 
 repmgr_cluster_group:
   - node1

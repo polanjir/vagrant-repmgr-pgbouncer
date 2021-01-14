@@ -5,3 +5,4 @@
   roles:
     - postgres
     - repmgr
+    - pgbouncer

@@ -1,0 +1,13 @@
+pgbouncer_path: /etc/pgbouncer
+
+pgbouncer_listen_port: 6432
+
+pgbouncer_user: postgres
+pgbouncer_group: postgres
+
+pgbouncer_admin_stat_user: pgbouncer
+pgbouncer_admin_stat_pass: pgbouncer_pass
+
+test_db_user: temp_user
+test_db_pass: temp_pass
+test_db_name: temp_db

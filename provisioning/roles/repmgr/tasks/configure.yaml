@@ -1,0 +1,93 @@
+- name: Update the /etc/hosts file with node name
+  lineinfile:
+    path: "/etc/hosts"
+    regexp: ".*{{ hostvars[item].connection_host }}\t{{ item }}"
+    line: "{{ hostvars[item].connection_host }}\t{{ item }}"
+    state: present
+    backup: yes
+  with_items: "{{repmgr_cluster_group}}"
+  
+- name: Copy repmgr configuration
+  template:
+    src: postgres/repmgr.conf.j2
+    dest: /etc/postgresql/{{ postgresql_version }}/main/conf.d/repmgr.conf
+    owner: "{{ repmgr_user }}"
+    group: "{{ repmgr_group }}"
+    mode: 0644
+
+- name: Modify pg_hba for repmgr
+  blockinfile:
+    path: /etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - REPMGR"
+    backup: yes
+    owner: "{{ repmgr_user }}"
+    group: "{{ repmgr_group }}"
+    mode: 0640
+    content: |
+      local   replication   {{ repmgr_db_user }}                            {{ auth_type }}
+      host    replication   {{ repmgr_db_user }}       127.0.0.1/32         {{ auth_type }}
+      {% for host in repmgr_cluster_group %}
+      host    replication   {{ repmgr_db_user }}       {{ hostvars[host].connection_host }}/32       {{ auth_type }}
+      {% endfor %}
+      local   {{ repmgr_db_name }}        {{ repmgr_db_user }}                            {{ auth_type }}
+      host    {{ repmgr_db_name }}        {{ repmgr_db_user }}       127.0.0.1/32         {{ auth_type }}
+      {% for host in repmgr_cluster_group %}
+      host    {{ repmgr_db_name }}        {{ repmgr_db_user }}       {{ hostvars[host].connection_host }}/32       {{ auth_type }}
+      {% endfor %}
+
+- name: Copy sudoer
+  copy:
+    dest: /etc/sudoers.d/postgres
+    mode: 0440
+    validate: '/usr/sbin/visudo -cf %s'
+    content: |
+      {{ repmgr_user }} ALL = NOPASSWD: /bin/systemctl * postgresql.service, /usr/bin/pg_ctlcluster
+
+- name: add password to .pgpass file
+  lineinfile:
+    dest: "~{{ repmgr_user }}/.pgpass"
+    line: "*:*:*:{{ repmgr_db_user }}:{{ repmgr_db_password | mandatory }}"
+    create: yes
+    owner: "{{ repmgr_user }}"
+    group: "{{ repmgr_group }}"
+    mode: 0600
+  when: auth_type == "md5"
+
+- name: Create user for repmgr
+  become: yes
+  become_user: postgres
+  postgresql_user:
+    name: "{{ repmgr_db_user }}"
+    password: "{{ repmgr_db_password | mandatory }}"
+    role_attr_flags: SUPERUSER
+
+- name: Create database for repmgr
+  become: yes
+  become_user: postgres
+  postgresql_db:
+    name: "{{ repmgr_db_name }}"
+    owner: "{{ repmgr_db_user }}"
+    template: "template0"
+
+- name: Modify search_path
+  become_user: postgres
+  ignore_errors: yes
+  shell: |
+    psql -c 'ALTER USER {{ repmgr_db_user }} SET search_path TO repmgr, public;' || true
+
+- name: repmgr main configuration file
+  template:
+    src: repmgr/repmgr.conf.j2
+    dest: "{{ repmgr_conf }}"
+    backup: yes
+    owner: "{{ repmgr_user }}"
+    group: "{{ repmgr_group }}"
+    mode: '0644'
+  notify:
+    - restart repmgrd
+
+- name: Restart PostgreSQL
+  systemd:
+    name: postgresql
+    enabled: yes
+    state: restarted

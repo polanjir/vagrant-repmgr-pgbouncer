@@ -1,5 +1,29 @@
 max_connections: 100
-db_user: temp_user
-db_password: temp_password
-db_name: temp_db
 postgres_primary: node1
+
+repmgr_conf: /etc/repmgr.conf
+repmgr_user: postgres
+repmgr_group: postgres
+
+repmgr_db_name: repmgr
+repmgr_db_user: repmgr
+repmgr_db_password: repmgr_pass
+
+repmgr_conninfo: "host={{ connection_host }} dbname={{ repmgr_db_name }} user={{ repmgr_db_user }}  connect_timeout=2"
+
+repmgr_standby_disconnect_on_failover: true
+
+repmgr_failover: automatic
+repmgr_priority: 100
+repmgr_reconnect_attempts: 5
+repmgr_reconnect_interval: 1
+
+repmgr_monitoring_history: yes
+repmgr_monitor_interval_secs: 2
+repmgr_log_status_interval: 5
+repmgr_promote_check_timeout: 15
+repmgr_promote_check_interval: 1
+repmgr_master_response_timeout: 5
+
+repmgr_log_level: INFO
+repmgr_log_file: '/var/log/postgresql/repmgrd.log'

@@ -1,20 +1,36 @@
-node_id = {{ node_id }}
+node_id = {{ node_id | mandatory }}
 node_name = 'node{{ node_id }}'
-conninfo = 'host={{ connection_host }} user=repmgr dbname=repmgr connect_timeout=2'
-data_directory = '/var/lib/postgresql/{{ postgresql_version }}/main'
+conninfo='{{ repmgr_conninfo }}'
+
+data_directory = '{{ postgresql_datadir }}'
 
 use_replication_slots = yes
 
-reconnect_attempts = 5
-reconnect_interval = 1
+# Failover settings (repmgrd)
+# ---------------------------
+#
+# These settings are only applied when repmgrd is running.
 
-failover = automatic
+# Number of seconds to wait for a response from the primary server before
+# deciding it has failed
+
+#master_response_timeout={{ repmgr_master_response_timeout }}
+
+# Number of attempts at what interval (in seconds) to try and
+# connect to  a server to establish its status (e.g. master
+# during failover)
+reconnect_attempts={{ repmgr_reconnect_attempts }}
+reconnect_interval={{ repmgr_reconnect_interval }}
+
+# Autofailover options
+failover={{ repmgr_failover }} # one of 'automatic', 'manual'
+#priority={{ repmgr_priority }} # a value of zero or less prevents the node being promoted to primary
 
 standby_disconnect_on_failover = true
 
-pg_bindir = '/usr/lib/postgresql/{{ postgresql_version }}/bin'
-promote_command = '/usr/bin/repmgr standby promote -f /etc/repmgr.conf --log-to-file'
-follow_command = '/usr/bin/repmgr standby follow -f /etc/repmgr.conf --log-to-file --upstream-node-id=%n'
+pg_bindir = '{{ postgresql_bindir }}'
+promote_command = '/usr/bin/repmgr standby promote -f {{ repmgr_conf }} --log-to-file'
+follow_command = '/usr/bin/repmgr standby follow -f {{ repmgr_conf }} --log-to-file --upstream-node-id=%n'
 
 service_start_command = 'sudo /bin/systemctl start postgresql.service'
 service_stop_command = 'sudo /bin/systemctl stop postgresql.service'
@@ -22,12 +38,12 @@ service_restart_command = 'sudo /bin/systemctl restart postgresql.service'
 service_reload_command = 'sudo /bin/systemctl reload postgresql.service'
 #service_promote_command = ''
 
-monitoring_history = yes
-monitor_interval_secs = 2
-#log_status_interval = 5
-promote_check_timeout = 15
-#promote_check_interval = 1
-#master_response_timeout = 5
+monitoring_history = {{ repmgr_monitoring_history }}
+monitor_interval_secs = {{ repmgr_monitor_interval_secs }}
+#log_status_interval = {{ repmgr_log_status_interval }}
+promote_check_timeout = {{ repmgr_promote_check_timeout }}
+#promote_check_interval = {{ repmgr_promote_check_interval }}
+#master_response_timeout = {{ repmgr_master_response_timeout }}
 
-log_level = INFO
-log_file = '/var/log/postgresql/repmgrd.log'
+log_level = {{ repmgr_log_level }}
+log_file = '{{ repmgr_log_file }}'

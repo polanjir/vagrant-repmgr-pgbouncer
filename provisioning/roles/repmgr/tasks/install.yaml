@@ -1,0 +1,16 @@
+- name: Add 2ndquadrant apt key
+  apt_key:
+    url: https://dl.2ndquadrant.com/gpg-key.asc
+    state: present
+
+- name: Add postgres repo
+  apt_repository:
+    repo: "deb https://dl.2ndquadrant.com/default/release/apt {{ ansible_distribution_release }}-2ndquadrant main"
+    state: present
+    filename: 2ndquadrant
+    update_cache: yes
+
+- name: Install repmgr for PostgreSQL {{ postgresql_version }}
+  apt:
+    name: ['postgresql-{{ postgresql_version }}-repmgr', 'python3-psycopg2']
+    update_cache: yes

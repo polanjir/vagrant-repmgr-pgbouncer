@@ -13,14 +13,14 @@
 - name: Clean up PostgreSQL data directory
   become_user: postgres
   file:
-    path: /var/lib/postgresql/{{ postgresql_version }}/main
+    path: "{{ postgresql_datadir }}"
     force: yes
     state: absent
   when: role == "standby"
 
 - name: Clone primary node data
   become_user: postgres
-  shell: repmgr -h {{ hostvars[postgres_primary].connection_host }} -U repmgr -d repmgr standby clone
+  shell: repmgr -h {{ hostvars[postgres_primary].connection_host }} -U {{ repmgr_db_user }} -d {{ repmgr_db_name }} standby clone
   ignore_errors: yes
   when: role == "standby"
 

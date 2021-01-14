@@ -7,14 +7,14 @@ PGBOUNCER_HOSTS="{% for host in repmgr_cluster_group  %}
 {{ hostvars[host].connection_host }}
 {%- if not loop.last %} {% endif %}
 {% endfor %}"
-DATABASES={{ db_name }}
+DATABASES={{ test_db_name }}
 
 # Pause pgbouncer
 for h in ${PGBOUNCER_HOSTS}
 do
   for d in ${DATABASES}
   do
-      psql -U postgres -h ${h} -p 6432 pgbouncer -tc "pause ${d}"
+      psql -U {{ pgbouncer_admin_stat_user }} -h ${h} -p 6432 pgbouncer -tc "pause ${d}"
   done
 done
 
@@ -34,8 +34,8 @@ do
   for d in ${DATABASES}
   do
       rsync -a ${PGBOUNCER_DATABASE_INI_NEW} ${h}:/etc/pgbouncer/pgbouncer.database.ini
-      psql -U postgres -h ${h} -p 6432 pgbouncer -tc "reload"
-      psql -U postgres -h ${h} -p 6432 pgbouncer -tc "resume ${d}"
+      psql -U {{ pgbouncer_admin_stat_user }} -h ${h} -p 6432 pgbouncer -tc "reload"
+      psql -U {{ pgbouncer_admin_stat_user }} -h ${h} -p 6432 pgbouncer -tc "resume ${d}"
   done
 done
 

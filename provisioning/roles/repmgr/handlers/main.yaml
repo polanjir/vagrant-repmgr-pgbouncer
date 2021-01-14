@@ -25,3 +25,9 @@
     name: pgbouncer
     state: restarted
     enabled: yes
+
+- name: restart pgbouncer
+  service:
+    name: pgbouncer
+    state: restarted
+    enabled: yes

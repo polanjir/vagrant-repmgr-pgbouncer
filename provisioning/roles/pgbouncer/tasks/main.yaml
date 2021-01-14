@@ -1,0 +1,125 @@
+- name: Install PgBouncer
+  apt:
+    name: pgbouncer
+
+- name: Create directory
+  file:
+    path: "{{ pgbouncer_path }}"
+    state: directory
+    group: "{{ pgbouncer_group }}"
+    owner: "{{ pgbouncer_user }}"
+
+- name: Config pgbouncer
+  template:
+    src: pgbouncer.ini.j2
+    dest: "{{ pgbouncer_path }}/pgbouncer.ini"
+    group: "{{ pgbouncer_group }}"
+    mode: 0644
+    owner: "{{ pgbouncer_user }}"
+    backup: yes
+  notify:
+    - restart pgbouncer
+
+- name: Copy pgbouncer.database.ini file
+  blockinfile:
+    path: "{{ pgbouncer_path }}/pgbouncer.database.ini"
+    create: yes
+    group: "{{ pgbouncer_group }}"
+    mode: 0644
+    owner: "{{ pgbouncer_user }}"
+    content: |
+      [databases]
+      {{ test_db_name }} = host={{ hostvars[postgres_primary].connection_host }}
+
+
+- name: Create userlist.txt file
+  blockinfile:
+    path: "{{ pgbouncer_path }}/userlist.txt"
+    create: yes
+    group: "{{ pgbouncer_group }}"
+    mode: 0644
+    owner: "{{ pgbouncer_user }}"
+    content: |
+      "{{ pgbouncer_admin_stat_user }}" "{{ pgbouncer_admin_stat_pass }}"
+      "{{ test_db_user }}" "{{ test_db_pass}}"
+
+- name: create pgbouncer userlist
+  shell: |
+    echo "\"{{pgbouncer_admin_stat_user}}\" \"md5`echo -n "{{pgbouncer_admin_stat_pass}}{{pgbouncer_admin_stat_user}}" | md5sum | awk '{print $1}'`\"" > /etc/pgbouncer/userlist.txt &&
+    echo "\"{{test_db_user}}\" \"md5`echo -n "{{test_db_pass}}{{test_db_user}}" | md5sum | awk '{print $1}'`\"" >> /etc/pgbouncer/userlist.txt
+  when: auth_type == "md5"
+
+- name: add password to .pgpass file
+  lineinfile:
+    dest: "~{{ repmgr_user }}/.pgpass"
+    line: "*:*:*:{{ pgbouncer_admin_stat_user }}:{{ pgbouncer_admin_stat_pass | mandatory }}"
+    create: yes
+    owner: "{{ repmgr_user }}"
+    group: "{{ repmgr_group }}"
+    mode: 0600
+  when: auth_type == "md5"
+
+- name: Database - create admin/stat pgbouncer user
+  become: yes
+  become_user: postgres
+  postgresql_user:
+    name: "{{ pgbouncer_admin_stat_user }}"
+    password: "{{ pgbouncer_admin_stat_pass }}"
+  when:  hostvars[inventory_hostname].role == "primary"
+
+- name: Database - create Test user 
+  become: yes
+  become_user: postgres
+  postgresql_user:
+    name: "{{test_db_user}}"
+    password: "{{ test_db_pass }}"
+    role_attr_flags: LOGIN
+  when:  hostvars[inventory_hostname].role == "primary"
+
+- name: Database - Create Test database
+  become: yes
+  become_user: postgres
+  postgresql_db:
+    name: "{{test_db_name}}"
+    owner: "{{test_db_user}}"
+    template: "template0"
+  when:  hostvars[inventory_hostname].role == "primary"
+
+- name: Modify pg_hba for pgbouncer
+  blockinfile:
+    path: /etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - PGBOUNCER Admin/stat user connection"
+    backup: yes
+    owner: "{{ pgbouncer_user }}"
+    group: "{{ pgbouncer_group }}"
+    mode: 0640
+    content: |
+      {% for host in repmgr_cluster_group %}
+      host    pgbouncer     {{ pgbouncer_admin_stat_user }}     {{ hostvars[host].connection_host }}/32       {{ auth_type }}
+      {% endfor %}
+      
+      # test user
+      {% for host in repmgr_cluster_group %}
+      host    {{test_db_name}}       {{test_db_user}}   {{ hostvars[host].connection_host }}/32       {{ auth_type }}
+      {% endfor %}
+  notify: restart postgresql
+
+- name: Systemd pgbouncer override number open file limit
+  template:
+    src: pgbouncer.service
+    dest: /etc/systemd/system/pgbouncer.service
+  notify: pgbouncer daemon-reload
+
+- name: Copy pgbouncer.database.ini file
+  template:
+    src: promote.sh.j2
+    dest: /usr/local/bin/promote.sh
+    group: "{{ pgbouncer_group }}"
+    mode: 0755
+    owner: "{{ pgbouncer_user }}"
+
+- name: Replace configuration that needed
+  replace:
+    path: /etc/repmgr.conf
+    regexp: "^#(service_promote_command).*"
+    replace: "\\1 = '/usr/local/bin/promote.sh'"
