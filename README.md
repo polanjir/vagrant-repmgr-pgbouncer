@@ -32,7 +32,7 @@ temp_db=> SELECT CURRENT_USER usr, inet_server_addr() host, inet_server_port() p
 
 # Switch Postgres primary node [node1 -> node2]
 ## Dry-run switch test if everything is OK
-sudo -u postgres repmgr standby switchover -f /etc/repmgr.conf --siblings-follow --dry-run
+# sudo -u postgres repmgr standby switchover -f /etc/repmgr.conf --siblings-follow --dry-run
 ## Standby switchover
 sudo -u postgres repmgr standby switchover -f /etc/repmgr.conf --siblings-follow
 
